@@ -12,6 +12,25 @@ import sys
 from pathlib import Path
 
 
+def determine_merge_verdict(issues: list[dict]) -> tuple[str, str]:
+    """Determine merge verdict based on issues.
+
+    Returns:
+        Tuple of (verdict, rationale) where verdict is YES/NOT SURE/NO
+    """
+    high_issues = [i for i in issues if i.get('severity') == 'HIGH']
+    medium_issues = [i for i in issues if i.get('severity') == 'MEDIUM']
+
+    if high_issues:
+        return "NO", f"Do NOT merge: {len(high_issues)} HIGH severity issue(s) found"
+    elif len(medium_issues) >= 2:
+        return "NOT SURE", f"Review recommended: {len(medium_issues)} MEDIUM severity issues found"
+    elif len(medium_issues) == 1:
+        return "NOT SURE", "Review recommended: 1 MEDIUM severity issue found"
+    else:
+        return "YES", "Merge with confidence: No significant issues found"
+
+
 def get_pr_head_sha(repo: str, pr_number: int) -> str | None:
     """Get the HEAD commit SHA of the PR."""
     try:
@@ -185,8 +204,19 @@ def format_summary_comment(
     medium_issues = [i for i in issues if i.get('severity') == 'MEDIUM']
     low_issues = [i for i in issues if i.get('severity') == 'LOW']
 
+    # Determine merge verdict
+    verdict, rationale = determine_merge_verdict(issues)
+    verdict_emoji = {
+        "YES": ":green_circle:",
+        "NOT SURE": ":yellow_circle:",
+        "NO": ":red_circle:"
+    }.get(verdict, ":white_circle:")
+
     lines = [
         "## :mag: Dyadbot Code Review Summary",
+        "",
+        f"### Merge Verdict: {verdict_emoji} {verdict}",
+        f"> {rationale}",
         "",
     ]
 

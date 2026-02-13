@@ -37,6 +37,25 @@ MAX_TOKENS = 48_000  # Maximum output tokens
 
 SEVERITY_RANK = {"HIGH": 3, "MEDIUM": 2, "LOW": 1}
 
+
+def determine_merge_verdict(issues: list[dict]) -> tuple[str, str]:
+    """Determine merge verdict based on issues.
+
+    Returns:
+        Tuple of (verdict, rationale) where verdict is YES/NOT SURE/NO
+    """
+    high_issues = [i for i in issues if i.get('severity') == 'HIGH']
+    medium_issues = [i for i in issues if i.get('severity') == 'MEDIUM']
+
+    if high_issues:
+        return "NO", f"Do NOT merge: {len(high_issues)} HIGH severity issue(s) found"
+    elif len(medium_issues) >= 2:
+        return "NOT SURE", f"Review recommended: {len(medium_issues)} MEDIUM severity issues found"
+    elif len(medium_issues) == 1:
+        return "NOT SURE", "Review recommended: 1 MEDIUM severity issue found"
+    else:
+        return "YES", "Merge with confidence: No significant issues found"
+
 # Paths to the review prompt markdown files (relative to this script)
 SCRIPT_DIR = Path(__file__).parent
 REFERENCES_DIR = SCRIPT_DIR.parent / "references"
@@ -459,11 +478,18 @@ async def aggregate_issues(
 
 def format_pr_comment(issues: list[dict]) -> str:
     """Format consensus issues as a GitHub PR comment."""
+    # Determine merge verdict
+    verdict, rationale = determine_merge_verdict(issues)
+    verdict_emoji = {"YES": "🟢", "NOT SURE": "🟡", "NO": "🔴"}.get(verdict, "⚪")
+
     if not issues:
-        return "## 🔍 Multi-Agent Code Review\n\nNo significant issues found by consensus review."
-    
+        return f"## 🔍 Multi-Agent Code Review\n\n### Merge Verdict: {verdict_emoji} {verdict}\n> {rationale}\n\nNo significant issues found by consensus review."
+
     lines = [
         "## 🔍 Multi-Agent Code Review",
+        "",
+        f"### Merge Verdict: {verdict_emoji} {verdict}",
+        f"> {rationale}",
         "",
         f"Found **{len(issues)}** issue(s) flagged by multiple reviewers:",
         ""
@@ -588,7 +614,12 @@ async def main():
     )
     
     print(f"Found {len(consensus_issues)} consensus issues")
-    
+
+    # Determine merge verdict
+    verdict, rationale = determine_merge_verdict(consensus_issues)
+    print(f"\nMerge verdict: {verdict}")
+    print(f"  {rationale}")
+
     # Save results
     output = {
         'pr_number': args.pr_number,
@@ -600,6 +631,8 @@ async def main():
         'thinking_budget': thinking_budget if use_thinking else None,
         'total_issues_per_agent': [len(r) for r in all_results],
         'consensus_issues': consensus_issues,
+        'merge_verdict': verdict,
+        'merge_rationale': rationale,
         'existing_comments': existing_comments,
         'comment_body': format_pr_comment(consensus_issues)
     }

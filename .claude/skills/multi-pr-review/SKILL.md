@@ -17,7 +17,8 @@ This skill creates three independent sub-agents to review code changes, then agg
 3. Each agent reviews and classifies issues (high/medium/low criticality)
 4. Aggregate results: report issues where 2+ agents agree
 5. Filter out issues already commented on (deduplication)
-6. Post findings: summary table + inline comments for HIGH/MEDIUM issues
+6. Determine merge confidence verdict (YES / NOT SURE / NO)
+7. Post findings: summary table with verdict + inline comments for HIGH/MEDIUM issues
 
 ## Workflow
 
@@ -92,7 +93,15 @@ Issues are matched across agents by file + approximate line range + issue type. 
 
 **Deduplication:** Before posting, the script fetches existing PR comments and filters out issues that have already been commented on (matching by file, line, and issue keywords). This prevents duplicate comments when re-running the review.
 
-### Step 5: Post PR Comments
+### Step 5: Merge Verdict
+
+After aggregation and deduplication, a merge confidence verdict is determined:
+
+- **YES** - Merge with confidence: No HIGH severity issues and at most 1 MEDIUM issue
+- **NOT SURE** - Review recommended: 2+ MEDIUM issues or borderline concerns
+- **NO** - Do NOT merge: Any HIGH severity issue present
+
+### Step 6: Post PR Comments
 
 The script posts two types of comments:
 
@@ -115,6 +124,10 @@ Options:
 
 ```markdown
 ## :mag: Dyadbot Code Review Summary
+
+### Merge Verdict: :yellow_circle: NOT SURE
+
+> Review recommended: 2+ MEDIUM severity issues found
 
 Found **4** new issue(s) flagged by 3 independent reviewers.
 (2 issue(s) skipped - already commented)
