@@ -81,6 +81,9 @@ export const chats = sqliteTable("chats", {
   compactedAt: integer("compacted_at", { mode: "timestamp" }),
   compactionBackupPath: text("compaction_backup_path"),
   pendingCompaction: integer("pending_compaction", { mode: "boolean" }),
+  // Per-chat settings
+  chatMode: text("chat_mode"),
+  selectedModel: text("selected_model"),
 });
 
 export const messages = sqliteTable("messages", {

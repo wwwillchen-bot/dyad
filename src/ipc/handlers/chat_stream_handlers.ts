@@ -18,6 +18,7 @@ import { db } from "../../db";
 import { chats, messages } from "../../db/schema";
 import { and, eq, isNull } from "drizzle-orm";
 import type { SmartContextMode } from "../../lib/schemas";
+import { migrateStoredChatMode } from "../../lib/schemas";
 import {
   constructSystemPrompt,
   readAiRules,
@@ -257,6 +258,23 @@ export function registerChatStreamHandlers() {
           DyadErrorKind.NotFound,
         );
       }
+
+      // Read global settings and merge with per-chat settings
+      const globalSettings = readSettings();
+      const parsedSelectedModel = chat.selectedModel
+        ? JSON.parse(chat.selectedModel)
+        : null;
+      const settings = {
+        ...globalSettings,
+        // Per-chat mode overrides global if set (migrate deprecated "agent" to "build")
+        selectedChatMode: chat.chatMode
+          ? migrateStoredChatMode(
+              chat.chatMode as Parameters<typeof migrateStoredChatMode>[0],
+            )
+          : globalSettings.selectedChatMode,
+        // Per-chat model overrides global if set
+        selectedModel: parsedSelectedModel ?? globalSettings.selectedModel,
+      };
 
       // Handle redo option: remove the most recent messages if needed
       if (req.redo) {
@@ -531,7 +549,6 @@ ${componentSnippet}
         })
         .returning({ id: messages.id });
       const userMessageId = insertedUserMessage.id;
-      const settings = readSettings();
       // Only Dyad Pro requests have request ids.
       if (settings.enableDyadPro) {
         // Generate requestId early so it can be saved with the message

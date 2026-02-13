@@ -38,6 +38,7 @@ export const ChatSchema = z.object({
   messages: z.array(MessageSchema),
   initialCommitHash: z.string().nullable().optional(),
   dbTimestamp: z.string().nullable().optional(),
+  chatMode: z.string().nullable().optional(),
 });
 
 export type Chat = z.infer<typeof ChatSchema>;
@@ -247,6 +248,25 @@ export const chatContracts = {
     channel: "chat:cancel",
     input: z.number(), // chatId
     output: z.boolean(),
+  }),
+
+  getChatSettings: defineContract({
+    channel: "get-chat-settings",
+    input: z.number(), // chatId
+    output: z.object({
+      chatMode: z.string().nullable(),
+      selectedModel: z.string().nullable(),
+    }),
+  }),
+
+  updateChatSettings: defineContract({
+    channel: "update-chat-settings",
+    input: z.object({
+      chatId: z.number(),
+      chatMode: z.string().optional(),
+      selectedModel: z.string().optional(),
+    }),
+    output: z.void(),
   }),
 } as const;
 
