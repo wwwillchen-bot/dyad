@@ -19,7 +19,7 @@ export function AppItem({ app, handleAppClick, selectedAppId }: AppItemProps) {
           onClick={() => handleAppClick(app.id)}
           className={`justify-start w-full text-left py-3 hover:bg-sidebar-accent/80 ${
             selectedAppId === app.id
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+              ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
               : ""
           }`}
           data-testid={`app-list-item-${app.name}`}

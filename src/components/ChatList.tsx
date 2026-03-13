@@ -240,7 +240,7 @@ export function ChatList({ show }: { show?: boolean }) {
                         }
                         className={`justify-start w-full text-left py-3 pr-1 hover:bg-sidebar-accent/80 ${
                           selectedChatId === chat.id
-                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                             : ""
                         }`}
                       >
