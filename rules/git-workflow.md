@@ -68,7 +68,7 @@ gh api graphql --input .claude/tmp/resolve_thread.json
 
 ## Adding labels to PRs
 
-`gh pr edit --add-label` can fail for two reasons:
+`gh pr edit --add-label` can fail for several reasons:
 
 1. **GraphQL "Projects (classic)" deprecation error** on repos that had classic projects. Use the REST API instead:
 
@@ -77,6 +77,8 @@ gh api repos/dyad-sh/dyad/issues/{PR_NUMBER}/labels -f "labels[]=label-name"
 ```
 
 2. **Bot account permission errors:** The `wwwillchen-bot` account (and similar bot/fork accounts) may not have permission to add labels on the upstream repo (`dyad-sh/dyad`). Both `gh pr edit --add-label` and the REST API will fail with 403/permission errors. In this case, skip label addition and note it in the PR summary rather than failing the workflow. Labels can be added later by a maintainer with appropriate permissions.
+
+3. **Label does not exist on fork repo:** When a PR is created from a fork, `gh pr edit --add-label` targets the fork's label set, not the upstream repo's labels. If the label (e.g., `cc:request`) only exists on the upstream repo (`dyad-sh/dyad`) and not on the fork, the call will fail because the label doesn't exist. This is distinct from a permission error — the label simply isn't defined on the fork. The same guidance applies: skip label addition and move on.
 
 ## CI file access (claude-code-action)
 
