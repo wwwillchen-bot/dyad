@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { shouldFilterTelemetryException } from "@/ipc/utils/telemetry";
+import { RateLimitError } from "@/ipc/utils/retryWithRateLimit";
 
 describe("shouldFilterTelemetryException", () => {
   it("filters the known Supabase auth noise message", () => {
@@ -13,15 +14,17 @@ describe("shouldFilterTelemetryException", () => {
   });
 
   it("filters RateLimitError 429s from retryWithRateLimit", () => {
-    const error = new Error("Rate limited (429): Too Many Requests");
-    error.name = "RateLimitError";
+    const mockResponse = new Response(null, { status: 429 });
+    const error = new RateLimitError(
+      "Rate limited (429): Too Many Requests",
+      mockResponse,
+    );
 
     expect(shouldFilterTelemetryException(error)).toBe(true);
   });
 
-  it("does not filter non-429 RateLimitError variants", () => {
+  it("does not filter a plain Error with rate-limit-like message", () => {
     const error = new Error("Rate limited (503): Service Unavailable");
-    error.name = "RateLimitError";
 
     expect(shouldFilterTelemetryException(error)).toBe(false);
   });

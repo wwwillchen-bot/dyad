@@ -1,6 +1,7 @@
 import { BrowserWindow } from "electron";
 import log from "electron-log";
 import { TelemetryEventPayload } from "@/ipc/types";
+import { RateLimitError } from "./retryWithRateLimit";
 
 const logger = log.scope("telemetry");
 const FILTERED_EXCEPTION_MESSAGES = new Set([
@@ -53,11 +54,7 @@ export function sendTelemetryException(
 }
 
 export function shouldFilterTelemetryException(error: unknown): boolean {
-  if (
-    error instanceof Error &&
-    error.name === "RateLimitError" &&
-    error.message.includes("(429)")
-  ) {
+  if (error instanceof RateLimitError) {
     return true;
   }
 
