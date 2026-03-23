@@ -43,16 +43,18 @@ const parsed = parseVersion(currentVersion);
 
 const options = [];
 
-// Current version stable: drop beta prerelease tag
-options.push({
-  label: "Current version stable",
-  version: formatVersion({
-    major: parsed.major,
-    minor: parsed.minor,
-    patch: parsed.patch,
-    beta: null,
-  }),
-});
+// Current version stable: drop beta prerelease tag (only if currently a beta)
+if (parsed.beta != null) {
+  options.push({
+    label: "Current version stable",
+    version: formatVersion({
+      major: parsed.major,
+      minor: parsed.minor,
+      patch: parsed.patch,
+      beta: null,
+    }),
+  });
+}
 
 // Next version-beta: bump minor, start at beta.1
 options.push({
