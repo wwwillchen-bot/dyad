@@ -110,6 +110,16 @@ git stash pop
 
 The stashed changes will be automatically merged back after the rebase completes.
 
+### Post-rebase verification
+
+After completing a rebase, always verify that **schema-related changes** survived the rebase. Rebases can silently drop commits or files, especially when there are modify/delete conflicts. Check for:
+
+- **Database schema changes** (new columns in `src/db/schema.ts`, migration SQL files in `drizzle/`)
+- **IPC contract definitions** (new contracts/channels in `src/ipc/types/*.ts`)
+- **Migration journal entries** (`drizzle/meta/_journal.json`)
+
+If handlers or components reference columns, contracts, or types that were introduced by the rebased branch, and those definitions were lost during the rebase, `npm run ts` will report type errors about missing properties or unknown identifiers. Run `npm run ts` immediately after a rebase to catch these issues early.
+
 ### Conflict resolution tips
 
 - **Modify/delete conflicts**: When a rebase shows `CONFLICT (modify/delete): <file> deleted in <commit> and modified in HEAD`, use `git rm <file>` (not `git add`) to resolve by confirming the deletion. Use `git add <file>` only when you want to keep the modified version instead.

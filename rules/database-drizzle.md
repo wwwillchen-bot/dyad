@@ -19,3 +19,15 @@ When rebasing a branch that has drizzle migrations conflicting with upstream (e.
 3. Update `drizzle/meta/_journal.json` to include all migrations with correct indices
 4. Create/update the snapshot file (`drizzle/meta/00XX_snapshot.json`) with the new index, updating `prevId` to reference the previous snapshot's `id`
 5. If the PR had subsequent commits that deleted/modified its migration files, those changes become no-ops after renaming — just accept the deletion conflicts by staging the renamed files
+
+## SQLite text columns and TypeScript type narrowing
+
+When a column is defined as `text("columnName")` in the drizzle schema, the ORM returns `string | null` at runtime. If a function expects a narrower union type (e.g., `StoredChatMode | undefined`), you need an explicit cast at the call site:
+
+```ts
+// Example: chatMode column is text("chatMode") → string | null
+// migrateStoredChatMode expects StoredChatMode | undefined
+migrateStoredChatMode(chat.chatMode as Parameters<typeof migrateStoredChatMode>[0]);
+```
+
+Using `Parameters<typeof fn>[0]` keeps the cast tied to the function's actual signature, so it stays correct if the type changes. This pattern applies whenever drizzle's broad `string | null` return type must be narrowed to a specific string-literal union expected by a consumer function

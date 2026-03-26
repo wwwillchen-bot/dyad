@@ -74,6 +74,17 @@ writeSettings({
 - For **non-bug** failures (validation, not found, auth, user refusal, etc.), prefer `DyadError` with the right `DyadErrorKind` so PostHog does not flood with `$exception` events — see [rules/dyad-errors.md](dyad-errors.md).
 - Use `createTypedHandler(contract, handler)` which validates inputs at runtime via Zod.
 
+## Per-entity settings override pattern
+
+In handlers like `chat_stream_handlers.ts`, per-chat (or per-entity) settings may be merged with global settings early in the function:
+
+```ts
+const globalSettings = readSettings();
+const settings = { ...globalSettings, ...perChatOverrides };
+```
+
+When adding this pattern, make sure to **remove or replace** any later `const settings = readSettings()` call in the same scope. Having both declarations causes a `SyntaxError: Identifier 'settings' has already been declared` at runtime. The merged variable should be the single source of truth for the rest of the function.
+
 ## React Query key factory
 
 All React Query keys must be defined in `src/lib/queryKeys.ts` using the centralized factory pattern. This provides:
